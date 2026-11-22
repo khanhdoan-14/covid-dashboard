@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+.env
+uv-cache/
+/work/
+/outputs/cleaned_covid_all_countries.csv

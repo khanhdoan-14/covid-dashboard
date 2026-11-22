@@ -1,0 +1,285 @@
+<!doctype html>
+<html lang="vi">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>COVID-19 Dashboard</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+  <style>
+    :root { --ink:#17313a; --muted:#66787f; --line:#d8e1e3; --paper:#f6faf9; --surface:#fff; --teal:#078c84; --coral:#d95d50; --gold:#e5a823; --sky:#3d8cbd; }
+    * { box-sizing: border-box; }
+    body { margin:0; color:var(--ink); background:var(--paper); font-family:Inter,ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif; }
+    .topbar { min-height:66px; padding:0 5vw; display:flex; align-items:center; justify-content:space-between; gap:20px; background:var(--surface); border-bottom:1px solid var(--line); }
+    .brand { font-weight:750; font-size:19px; }.brand span{color:var(--coral)}.source{color:var(--muted);font-size:13px}.source a{color:inherit;text-decoration:underline;text-underline-offset:3px}
+    main { max-width:1320px; margin:0 auto; padding:34px 5vw 48px; } h1{margin:0;font-size:30px;letter-spacing:0}.subtitle{margin:8px 0 12px;color:var(--muted)}.data-notice{margin:0 0 24px;padding:10px 12px;color:#744b00;background:#fff3d6;border:1px solid #f0d58f;border-radius:5px;font-size:13px}
+    .filters { display:grid; grid-template-columns:1fr 1.5fr auto; gap:12px; align-items:end; padding:18px; margin-bottom:22px; background:var(--surface); border:1px solid var(--line); border-radius:8px; }
+    label { display:grid; gap:6px; color:var(--muted); font-size:13px; font-weight:650; } select,input { width:100%; min-height:40px; padding:0 11px; color:var(--ink); background:#fff; border:1px solid #b8c8cb; border-radius:5px; font:inherit; font-size:14px; }
+    .country-filter { display:grid; gap:6px; min-width:0; } .country-picker { position:relative; } #countryFilter { padding-right:66px; } .country-toggle { position:absolute; top:1px; right:1px; width:38px; height:38px; border:0; border-radius:0 4px 4px 0; color:var(--ink); background:#fff; font:inherit; font-size:18px; cursor:pointer; } .country-toggle:hover { background:#f1f6f5; }
+    .country-options { position:absolute; top:calc(100% + 4px); right:0; left:0; z-index:10; max-height:260px; overflow-y:auto; margin:0; padding:4px 0; list-style:none; background:#fff; border:1px solid var(--line); border-radius:5px; box-shadow:0 6px 16px #17313a24; } .country-options[hidden] { display:none; } .country-option { padding:9px 11px; color:var(--ink); font-size:14px; cursor:pointer; } .country-option:hover,.country-option[aria-selected="true"] { background:#eaf5f3; } .country-empty { padding:9px 11px; color:var(--muted); font-size:13px; }
+    .status { align-self:center; color:var(--muted); font-size:13px; white-space:nowrap; }
+    .metrics { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:14px; margin-bottom:22px; }.metric{min-height:105px;padding:18px;background:var(--surface);border:1px solid var(--line);border-radius:8px}.metric-label{color:var(--muted);font-size:13px}.metric-value{margin-top:10px;font-size:26px;font-weight:750}.metric-note{margin-top:4px;color:var(--muted);font-size:12px}
+    .chart-grid{display:grid;grid-template-columns:minmax(300px,1fr) minmax(400px,1fr);gap:18px;margin-bottom:18px}.chart-panel{min-width:0;padding:20px;background:var(--surface);border:1px solid var(--line);border-radius:8px}.chart-panel.wide{min-height:375px}h2{margin:0 0 4px;font-size:17px}.chart-note{margin:0 0 14px;color:var(--muted);font-size:13px}.chart-box{position:relative;height:290px}.chart-panel.wide .chart-box{height:300px}
+    .heatmap-wrap{height:290px;overflow:auto}.heatmap-table{width:100%;min-width:0;table-layout:fixed;border-collapse:collapse}.heatmap-table th,.heatmap-table td{padding:7px 4px;text-align:center;border:1px solid var(--line);font-size:11px}.heatmap-table th{font-weight:650;text-transform:none;overflow-wrap:anywhere}.heatmap-table td{font-variant-numeric:tabular-nums}.empty-note{color:var(--muted);text-align:center;padding-top:105px}
+    .table-section{margin-top:28px}.table-wrap{overflow-x:auto;background:var(--surface);border:1px solid var(--line);border-radius:8px}table{width:100%;border-collapse:collapse;min-width:720px}th,td{padding:14px 16px;text-align:left;border-bottom:1px solid var(--line);font-size:14px}th{color:var(--muted);font-size:12px;font-weight:700;text-transform:uppercase}tr:last-child td{border-bottom:0}.level{display:inline-block;padding:4px 8px;border-radius:4px;font-size:12px;font-weight:700}.high{color:#05695f;background:#d9f1ec}.medium{color:#915c00;background:#fff0cf}.low{color:#9e342e;background:#ffe1dd}.unknown{color:#58686e;background:#e7edef}footer{margin-top:22px;color:var(--muted);font-size:12px}.hidden{display:none}
+    .ranking-wrap{max-height:290px;overflow:auto;border:1px solid var(--line);border-radius:5px}.ranking-table{min-width:480px}.ranking-table th,.ranking-table td{padding:9px 10px;font-size:12px}.ranking-table th{position:sticky;top:0;background:#f6faf9}.ranking-table td:first-child,.ranking-table th:first-child{text-align:center;width:48px}.ranking-table td:last-child,.ranking-table th:last-child{text-align:right}
+    @media(max-width:880px){.filters,.chart-grid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.status{white-space:normal}}@media(max-width:520px){.topbar{padding:0 20px}main{padding:26px 20px 38px}h1{font-size:25px}.source{display:none}.metrics{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <header class="topbar"><div class="brand"><span>COVID-19</span> Dashboard</div><div class="source">Nguồn chính: <a href="https://docs.owid.io/projects/etl/api/covid/" target="_blank" rel="noopener noreferrer">OWID Data Catalog</a> · <a href="https://www.kaggle.com/datasets/bolkonsky/covid19" target="_blank" rel="noopener noreferrer">Kaggle snapshot</a> | <span id="dataCoverage">...</span></div></header>
+  <main>
+    <h1>Ca nhiễm, tử vong và tiêm chủng COVID-19</h1>
+    <p class="subtitle">Xu hướng ca mới và tử vong được chuẩn hóa theo dân số; vaccine thể hiện tỷ lệ hoàn thành phác đồ ban đầu.</p>
+    <p class="data-notice" id="dataNotice">Đang đọc phạm vi dữ liệu...</p>
+    <section class="filters" aria-label="Bộ lọc dữ liệu">
+      <label>Châu lục<select id="continentFilter"><option value="">Tất cả 5 châu lục</option></select></label>
+      <div class="country-filter">
+        <label for="countryFilter">Tìm quốc gia</label>
+        <div class="country-picker">
+          <input id="countryFilter" type="search" placeholder="Ví dụ: Vietnam, Japan, France..." role="combobox" aria-autocomplete="list" aria-controls="countryOptions" aria-expanded="false">
+          <button class="country-toggle" id="countryToggle" type="button" aria-label="Mở danh sách quốc gia" aria-haspopup="listbox" aria-expanded="false">▾</button>
+          <ul class="country-options" id="countryOptions" role="listbox" aria-label="Danh sách quốc gia" hidden></ul>
+        </div>
+      </div>
+      <div class="status" id="status">Đang tải dữ liệu...</div>
+    </section>
+    <section class="metrics" aria-label="Các chỉ số chính">
+      <article class="metric"><div class="metric-label">Quốc gia đang xem</div><div class="metric-value" id="countryName">-</div><div class="metric-note" id="countryContinent">-</div></article>
+      <article class="metric"><div class="metric-label">Tổng ca nhiễm</div><div class="metric-value" id="totalCases">-</div><div class="metric-note">Giá trị cao nhất ghi nhận</div></article>
+      <article class="metric"><div class="metric-label">Tổng ca tử vong</div><div class="metric-value" id="totalDeaths">-</div><div class="metric-note">Giá trị cao nhất ghi nhận</div></article>
+      <article class="metric"><div class="metric-label">Tiêm đủ liều</div><div class="metric-value" id="vaccinationRate">-</div><div class="metric-note">Giá trị gần nhất trong kỳ</div></article>
+    </section>
+    <section class="chart-grid" aria-label="Biểu đồ theo quốc gia">
+      <article class="chart-panel"><h2>10 quốc gia có ca mới cao nhất</h2><p class="chart-note">Trung bình 7 ngày trên mỗi triệu dân; nhóm theo châu lục.</p><div class="chart-box"><canvas id="casesChart" aria-label="10 quốc gia có ca mới trung bình trên một triệu dân cao nhất"></canvas></div></article>
+      <article class="chart-panel"><h2>10 quốc gia có tử vong cao nhất</h2><p class="chart-note">Tử vong tích lũy trên mỗi triệu dân; nhóm theo châu lục.</p><div class="chart-box"><canvas id="deathsChart" aria-label="10 quốc gia có tử vong trên một triệu dân cao nhất"></canvas></div></article>
+      <article class="chart-panel"><h2>10 quốc gia có tỷ lệ tiêm đủ cao nhất</h2><p class="chart-note">Giá trị gần nhất trong kỳ phân tích; không cắt các giá trị trên 100% của nguồn.</p><div class="chart-box"><canvas id="vaccinationChart" aria-label="10 quốc gia có tỷ lệ tiêm đủ cao nhất"></canvas></div></article>
+    </section>
+    <section class="chart-panel wide" aria-label="Xu hướng ca và tử vong"><h2>Ca nhiễm mới và tử vong mới theo thời gian</h2><p class="chart-note">Trung bình 7 ngày trên một triệu dân, tổng hợp theo tháng cho quốc gia được chọn.</p><div class="chart-box"><canvas id="trendChart"></canvas></div></section>
+    <section class="chart-panel wide" aria-label="Xu hướng tiêm chủng"><h2>Tỷ lệ hoàn thành phác đồ tiêm ban đầu</h2><p class="chart-note">Giá trị gần nhất được báo cáo mỗi tháng; khoảng trống trước khi triển khai vaccine được giữ là thiếu.</p><div class="chart-box"><canvas id="vaccinationTrendChart"></canvas></div></section>
+    <section class="table-section"><h2>Thông tin quốc gia</h2><p class="chart-note">Bảng cập nhật khi bạn thay đổi bộ lọc.</p><div class="table-wrap"><table><thead><tr><th>Quốc gia</th><th>Châu lục</th><th>Tổng ca nhiễm</th><th>Tổng ca tử vong</th><th>Ca mới TB 7 ngày / 1 triệu</th><th>Tử vong / 1 triệu</th><th>Tiêm đủ liều (%)</th></tr></thead><tbody id="countryTable"></tbody></div></section>
+    <footer id="footer">Dashboard cần tệp <code>outputs/dashboard_data.json</code>, được tạo khi chạy toàn bộ notebook.</footer>
+  </main>
+  <script>
+    const currency = new Intl.NumberFormat("en-US", { maximumFractionDigits: 0 });
+    const percent = new Intl.NumberFormat("vi-VN", { maximumFractionDigits: 1 });
+    let data, selectedCountry, casesChart, deathsChart, vaccinationChart, trendChart, vaccinationTrendChart;
+    let visibleCountries = [], activeCountryIndex = -1;
+    // Tìm phần tử giao diện theo ID.
+    const byId = id => document.getElementById(id);
+    // Chuyển giá trị thành số hợp lệ, dùng 0 khi dữ liệu thiếu.
+    const safeNumber = value => Number.isFinite(Number(value)) ? Number(value) : 0;
+    // Định dạng số đếm thành số nguyên có dấu phân cách hàng nghìn.
+    const formatCount = value => currency.format(Math.trunc(safeNumber(value)));
+
+    // Cập nhật nội dung văn bản của một KPI.
+    function setMetric(id, value) { byId(id).textContent = value; }
+    // Hủy các biểu đồ cũ trước khi vẽ lại để tránh chồng canvas.
+    function destroyCharts() { [casesChart, deathsChart, vaccinationChart, trendChart, vaccinationTrendChart].forEach(chart => chart?.destroy()); }
+
+    // Tạo các lựa chọn châu lục từ metadata trong JSON.
+    function populateFilters() {
+      const continent = byId("continentFilter");
+      data.continents.forEach(name => continent.insertAdjacentHTML("beforeend", `<option value="${name}">${name}</option>`));
+    }
+
+    // Trả về danh sách quốc gia phù hợp với châu lục đang chọn.
+    function candidates() {
+      const continent = byId("continentFilter").value;
+      return data.countries.filter(country => !continent || country.continent === continent);
+    }
+
+    // Đóng danh sách gợi ý quốc gia và đặt lại trạng thái bàn phím.
+    function closeCountryOptions() {
+      byId("countryOptions").hidden = true;
+      byId("countryFilter").setAttribute("aria-expanded", "false");
+      byId("countryToggle").setAttribute("aria-expanded", "false");
+      byId("countryFilter").removeAttribute("aria-activedescendant");
+      activeCountryIndex = -1;
+    }
+
+    // Chọn quốc gia, cập nhật ô tìm kiếm và làm mới dashboard.
+    function selectCountry(country) {
+      selectedCountry = country;
+      byId("countryFilter").value = country.location;
+      closeCountryOptions();
+      render();
+    }
+
+    // Hiển thị danh sách quốc gia, có thể thu hẹp theo nội dung tìm kiếm.
+    function showCountryOptions(filterByQuery = true) {
+      const query = byId("countryFilter").value.trim().toLocaleLowerCase();
+      visibleCountries = candidates()
+        .filter(country => !filterByQuery || !query || country.location.toLocaleLowerCase().includes(query))
+        .sort((left, right) => left.location.localeCompare(right.location));
+      const options = byId("countryOptions");
+      options.replaceChildren();
+      if (visibleCountries.length) {
+        visibleCountries.forEach((country, index) => {
+          const option = document.createElement("li");
+          option.className = "country-option";
+          option.id = `country-option-${index}`;
+          option.setAttribute("role", "option");
+          option.setAttribute("aria-selected", "false");
+          option.textContent = country.location;
+          options.append(option);
+        });
+      } else {
+        const empty = document.createElement("li");
+        empty.className = "country-empty";
+        empty.textContent = "Không tìm thấy quốc gia";
+        options.append(empty);
+      }
+      activeCountryIndex = -1;
+      options.hidden = false;
+      byId("countryFilter").setAttribute("aria-expanded", "true");
+      byId("countryToggle").setAttribute("aria-expanded", "true");
+      byId("countryFilter").removeAttribute("aria-activedescendant");
+    }
+
+    // Di chuyển lựa chọn trong danh sách gợi ý bằng phím mũi tên.
+    function moveCountrySelection(direction) {
+      if (!visibleCountries.length) return;
+      activeCountryIndex = activeCountryIndex < 0
+        ? (direction > 0 ? 0 : visibleCountries.length - 1)
+        : (activeCountryIndex + direction + visibleCountries.length) % visibleCountries.length;
+      byId("countryOptions").querySelectorAll('[role="option"]').forEach((option, index) => {
+        option.setAttribute("aria-selected", String(index === activeCountryIndex));
+      });
+      const activeOption = byId(`country-option-${activeCountryIndex}`);
+      byId("countryFilter").setAttribute("aria-activedescendant", activeOption.id);
+      activeOption.scrollIntoView({ block:"nearest" });
+    }
+
+    // Chọn quốc gia khớp chính xác hoặc gần nhất với nội dung đã nhập.
+    function chooseCountry() {
+      const typed = byId("countryFilter").value.trim().toLocaleLowerCase();
+      const options = candidates();
+      const country = options.find(item => item.location.toLocaleLowerCase() === typed) || options.find(item => item.location.toLocaleLowerCase().includes(typed)) || options[0];
+      if (!country) return;
+      selectCountry(country);
+    }
+
+    // Hiển thị KPI cho quốc gia đang chọn.
+    function renderMetrics() {
+      const country = selectedCountry;
+      setMetric("countryName", country.location);
+      setMetric("countryContinent", country.continent);
+      setMetric("totalCases", formatCount(country.total_cases));
+      setMetric("totalDeaths", formatCount(country.total_deaths));
+      setMetric("vaccinationRate", country.vaccination_rate == null ? "Chưa có" : `${percent.format(country.vaccination_rate)}%`);
+    }
+
+    // Vẽ biểu đồ thanh xếp hạng theo một chỉ số quốc gia.
+    function renderRateBar(canvasId, countries, metric, label, color, suffix = "") {
+      const topCountries = countries
+        .filter(country => country[metric] != null && Number.isFinite(Number(country[metric])))
+        .sort((left, right) => safeNumber(right[metric]) - safeNumber(left[metric]) || left.location.localeCompare(right.location))
+        .slice(0, 10).reverse();
+      return new Chart(byId(canvasId), {
+        type:"bar",
+        data:{ labels:topCountries.map(country => country.location), datasets:[{ label, data:topCountries.map(country => safeNumber(country[metric])), backgroundColor:topCountries.map(country => country.location === selectedCountry.location ? "#078c84" : color), borderRadius:4 }] },
+        options:{ responsive:true, maintainAspectRatio:false, indexAxis:"y", plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:item => `${label}: ${percent.format(item.raw)}${suffix}` } } }, scales:{ x:{ beginAtZero:true, ticks:{ callback:value => `${percent.format(value)}${suffix}` }, grid:{ color:"#e8eeee" }, title:{ display:true, text:"Giá trị ghi nhận" } }, y:{ grid:{ display:false } } } }
+      });
+    }
+
+    // Vẽ các biểu đồ xếp hạng và xu hướng cho quốc gia đang chọn.
+    function renderCharts() {
+      destroyCharts();
+      const activeCountries = candidates();
+      const country = selectedCountry;
+      casesChart = renderRateBar("casesChart", activeCountries, "avg_new_cases_per_million", "Ca mới TB 7 ngày / 1 triệu dân", "#3d8cbd");
+      deathsChart = renderRateBar("deathsChart", activeCountries, "deaths_per_million", "Tử vong / 1 triệu dân", "#d95d50");
+      vaccinationChart = renderRateBar("vaccinationChart", activeCountries, "vaccination_rate", "Tiêm đủ liều", "#e5a823", "%");
+      const monthly = data.monthly_trends.filter(item => item.iso_code === country.iso_code).sort((a,b) => a.year_month.localeCompare(b.year_month));
+      trendChart = new Chart(byId("trendChart"), { type:"line", data:{ labels:monthly.map(item => item.year_month), datasets:[
+        { label:"Ca mới TB 7 ngày / 1 triệu dân", data:monthly.map(item => item.new_cases_smoothed_per_million), borderColor:"#3d8cbd", backgroundColor:"#3d8cbd", tension:.25, pointRadius:1.5, borderWidth:2, spanGaps:false },
+        { label:"Tử vong mới TB 7 ngày / 1 triệu dân", data:monthly.map(item => item.new_deaths_smoothed_per_million), borderColor:"#d95d50", backgroundColor:"#d95d50", tension:.25, pointRadius:1.5, borderWidth:2, spanGaps:false }
+      ] }, options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false }, plugins:{ legend:{ display:true, position:"bottom" }, tooltip:{ callbacks:{ label:item => `${item.dataset.label}: ${percent.format(item.raw)}` } } }, scales:{ y:{ beginAtZero:true, ticks:{ callback:value => percent.format(value) }, grid:{ color:"#e8eeee" }, title:{ display:true, text:"Số ca trên một triệu dân" } }, x:{ ticks:{ maxTicksLimit:10 }, grid:{ display:false } } } } });
+      vaccinationTrendChart = new Chart(byId("vaccinationTrendChart"), { type:"line", data:{ labels:monthly.map(item => item.year_month), datasets:[{ label:"Tiêm đủ liều (%)", data:monthly.map(item => item.vaccination_rate), borderColor:"#078c84", backgroundColor:"#078c84", tension:.25, pointRadius:1.5, borderWidth:2, spanGaps:false }] }, options:{ responsive:true, maintainAspectRatio:false, interaction:{ mode:"index", intersect:false }, plugins:{ legend:{ display:false }, tooltip:{ callbacks:{ label:item => `Tiêm đủ liều: ${percent.format(item.raw)}%` } } }, scales:{ y:{ beginAtZero:true, suggestedMax:100, ticks:{ callback:value => `${percent.format(value)}%` }, grid:{ color:"#e8eeee" }, title:{ display:true, text:"Dân số hoàn thành phác đồ ban đầu (%)" } }, x:{ ticks:{ maxTicksLimit:10 }, grid:{ display:false } } } } });
+    }
+
+    // Cập nhật hàng dữ liệu chi tiết của quốc gia đang chọn.
+    function renderTable() {
+      const country = selectedCountry;
+      byId("countryTable").innerHTML = `<tr><td>${country.location}</td><td>${country.continent}</td><td>${formatCount(country.total_cases)}</td><td>${formatCount(country.total_deaths)}</td><td>${country.avg_new_cases_per_million == null ? "Chưa có" : percent.format(country.avg_new_cases_per_million)}</td><td>${country.deaths_per_million == null ? "Chưa có" : formatCount(country.deaths_per_million)}</td><td>${country.vaccination_rate == null ? "Chưa có" : `${percent.format(country.vaccination_rate)}%`}</td></tr>`;
+    }
+
+    // Làm mới KPI, biểu đồ, bảng và bộ đếm theo bộ lọc hiện tại.
+    function render() {
+      renderMetrics(); renderCharts(); renderTable();
+      const activeCountries = candidates();
+      const activeContinents = new Set(activeCountries.map(country => country.continent)).size;
+      byId("status").textContent = `${activeCountries.length} quốc gia | ${activeContinents} châu lục`;
+    }
+
+    // Tải JSON, thiết lập bộ lọc và hiển thị dashboard lần đầu.
+    async function start() {
+      try {
+        const response = await fetch("outputs/dashboard_data.json", { cache:"no-store" });
+        if (!response.ok) throw new Error("Không tìm thấy dashboard_data.json");
+        data = await response.json();
+        populateFilters();
+        selectedCountry = data.countries.find(country => country.location === "Vietnam") || data.countries[0];
+        byId("countryFilter").value = selectedCountry.location;
+        byId("dataCoverage").textContent = data.date_window.join(" đến ");
+        const vaccinatedCountries = data.countries.filter(country => country.vaccination_rate != null).length;
+        byId("dataNotice").textContent = `${data.data_source}. Kỳ phân tích: ${data.date_window.join(" đến ")}; có dữ liệu tiêm chủng cho ${vaccinatedCountries}/${data.countries.length} quốc gia.`;
+        byId("footer").textContent = `Dữ liệu gồm ${data.countries.length} quốc gia thuộc ${data.continents.length} châu lục. Giai đoạn thực tế: ${data.date_window.join(" đến ")}. Khoảng phân tích yêu cầu: ${data.requested_date_window.join(" đến ")}.`;
+        render();
+      } catch (error) {
+        byId("status").textContent = "Chưa có dữ liệu dashboard";
+        byId("footer").textContent = "Hãy chạy Run All trong covid_dashboard.ipynb, sau đó mở dashboard.html bằng Live Server.";
+        console.error(error);
+      }
+    }
+    const countryFilter = byId("countryFilter");
+    const countryOptions = byId("countryOptions");
+    // Đổi châu lục thì xóa truy vấn và chọn quốc gia đầu tiên phù hợp.
+    byId("continentFilter").addEventListener("change", () => {
+      countryFilter.value = "";
+      closeCountryOptions();
+      chooseCountry();
+    });
+    // Cập nhật gợi ý mỗi khi nội dung tìm quốc gia thay đổi.
+    countryFilter.addEventListener("input", showCountryOptions);
+    // Chọn kết quả phù hợp khi người dùng rời ô tìm kiếm hoặc xác nhận tìm kiếm.
+    countryFilter.addEventListener("change", chooseCountry);
+    countryFilter.addEventListener("search", chooseCountry);
+    // Hỗ trợ điều hướng, chọn quốc gia và đóng gợi ý bằng bàn phím.
+    countryFilter.addEventListener("keydown", event => {
+      if (event.key === "ArrowDown" || event.key === "ArrowUp") {
+        event.preventDefault();
+        if (countryOptions.hidden) showCountryOptions();
+        moveCountrySelection(event.key === "ArrowDown" ? 1 : -1);
+      } else if (event.key === "Enter" && !countryOptions.hidden && visibleCountries.length) {
+        event.preventDefault();
+        selectCountry(visibleCountries[activeCountryIndex < 0 ? 0 : activeCountryIndex]);
+      } else if (event.key === "Escape") {
+        closeCountryOptions();
+      }
+    });
+    // Mở hoặc đóng danh sách quốc gia bằng nút mũi tên.
+    byId("countryToggle").addEventListener("click", () => {
+      if (countryOptions.hidden) {
+        showCountryOptions(false);
+        countryFilter.focus();
+      } else {
+        closeCountryOptions();
+      }
+    });
+    // Giữ focus trong ô tìm kiếm khi nhấn vào một gợi ý.
+    countryOptions.addEventListener("mousedown", event => event.preventDefault());
+    // Chọn quốc gia được nhấn trong danh sách gợi ý.
+    countryOptions.addEventListener("click", event => {
+      const option = event.target.closest('[role="option"]');
+      if (option) selectCountry(visibleCountries[Number(option.id.replace("country-option-", ""))]);
+    });
+    // Đóng danh sách gợi ý khi nhấn ra ngoài bộ chọn quốc gia.
+    document.addEventListener("click", event => {
+      if (!event.target.closest(".country-picker")) closeCountryOptions();
+    });
+    start();
+  </script>
+</body>
+</html>
+

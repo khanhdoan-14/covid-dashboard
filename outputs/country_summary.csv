@@ -1,0 +1,6 @@
+﻿iso_code,location,continent,total_cases,total_deaths,cases_per_million,deaths_per_million,avg_new_cases_per_million,vaccination_rate,vaccination_level,country_code_name
+BRA,Brazil,America,37511921.0,702116.0,178367.94,3338.5383,122.44104944713787,83.76549,High,Brazil
+GBR,United Kingdom,Europe,24865622.0,232112.0,364709.2,3404.4343,250.14347006989985,74.43005,High,United Kingdom
+IND,India,Asia,45013172.0,533361.0,31578.812,374.1773,21.65864308639483,66.786285,Medium,India
+USA,United States,America,103436829.0,1164499.0,302859.5,3409.6133,244.43866055460165,67.52983,Medium,United States
+VNM,Vietnam,Asia,11624000.0,43206.0,116612.4,433.44418,79.98146428247559,86.23695,High,Viet Nam

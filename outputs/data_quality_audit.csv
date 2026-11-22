@@ -1,0 +1,17 @@
+﻿check,observed,expected,status
+Source dataset,OWID Catalog: current compact COVID-19 CSV (cached),OWID compact CSV (Kaggle fallback),INFO
+Source rows,617667,As supplied by source,INFO
+Source date range,2020-01-01 to 2026-08-30,Requested 2020-01-01 to 2023-12-31,INFO
+Duplicate source country-date keys,0,0,PASS
+Source missing new_cases,17044,Preserved as missing,INFO
+Negative new_cases revisions in source,0,Preserved; source revisions,INFO
+Eligible source rows in analysis window,343983,343983,PASS
+Missing new_cases in eligible source rows,6529,6529,PASS
+Negative revisions in eligible source rows,0,0,PASS
+Source vs cleaned new_cases values,Exact match,Match by country and date,PASS
+Reported vaccination values preserved,Exact match,All reported source values preserved,PASS
+Cleaned rows,343983,Country rows in requested date window,INFO
+Duplicate cleaned country-date keys,0,0,PASS
+Cleaned country count vs summary,237 vs 237,Equal,PASS
+Vaccination observations,217328,Reported source observations,INFO
+Countries with vaccination data,214,Country-level latest values in analysis window,INFO
